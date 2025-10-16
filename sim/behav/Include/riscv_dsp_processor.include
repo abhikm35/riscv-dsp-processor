@@ -1,0 +1,21 @@
+# RISC-V DSP Processor Include File
+# Lists all source files needed for simulation
+
+# Interface files (compile first)
+../../testbench/riscv_dsp_if.sv
+
+# Package files (compile package first)
+../../testbench/riscv_dsp_pkg.sv
+
+# Source files
+../../src/riscv_dsp_core.v
+../../src/alu.v
+../../src/mac_unit.v
+../../src/simd_unit.v
+../../src/register_file.v
+../../src/instruction_decoder.v
+../../src/control_unit.v
+../../src/memory_interface.v
+
+# Testbench files (compile after package)
+../../testbench/riscv_dsp_tb_top.sv

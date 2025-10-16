@@ -8,48 +8,45 @@ module riscv_dsp_core (
     input wire rst_n,
     input wire [31:0] external_data_in,
     output reg [31:0] external_data_out,
-    output reg        processor_ready
+    output reg        processor_ready,
+    
+    // Debug/verification outputs
+    output wire [31:0] pc,
+    output wire [31:0] instruction,
+    output wire [31:0] pc_plus_4,
+    output wire [4:0]  rs1, rs2, rd,
+    output wire [31:0] reg_data1, reg_data2,
+    output wire [31:0] reg_write_data,
+    output wire        reg_write,
+    output wire [31:0] alu_result,
+    output wire        alu_zero, alu_overflow, alu_carry, alu_negative,
+    output wire [4:0]  alu_op,
+    output wire [31:0] mac_result,
+    output wire        mac_overflow, mac_underflow,
+    output wire [1:0]  mac_mode,
+    output wire        mac_enable,
+    output wire        saturate, round,
+    output wire [31:0] simd_result,
+    output wire        simd_overflow,
+    output wire [2:0]  simd_op,
+    output wire [1:0]  simd_width,
+    output wire        simd_enable,
+    output wire [31:0] mem_read_data,
+    output wire        mem_read, mem_write, mem_ready,
+    output wire        branch, jump,
+    output wire [31:0] branch_target,
+    output wire        branch_taken
 );
 
-    // Internal signals
-    wire [31:0] pc, pc_next;
-    wire [31:0] instruction;
-    wire [31:0] pc_plus_4;
+    // Internal signals (only those not exposed as outputs)
+    wire [31:0] pc_next;
+    reg [31:0] pc_current;  // Current PC register
     
     // Instruction decoder signals
     wire [6:0]  opcode;
-    wire [4:0]  rd, rs1, rs2;
     wire [2:0]  funct3;
     wire [6:0]  funct7;
     wire [31:0] imm32;
-    wire [4:0]  alu_op;
-    wire [2:0]  simd_op;
-    wire [1:0]  simd_width;
-    wire [1:0]  mac_mode;
-    wire        mac_enable, simd_enable;
-    wire        mem_read, mem_write, reg_write;
-    wire        branch, jump;
-    wire        saturate, round;
-    
-    // Register file signals
-    wire [31:0] reg_data1, reg_data2;
-    wire [31:0] reg_write_data;
-    
-    // ALU signals
-    wire [31:0] alu_result;
-    wire        alu_zero, alu_overflow, alu_carry, alu_negative;
-    
-    // MAC unit signals
-    wire [31:0] mac_result;
-    wire        mac_overflow, mac_underflow;
-    
-    // SIMD unit signals
-    wire [31:0] simd_result;
-    wire        simd_overflow;
-    
-    // Memory interface signals
-    wire [31:0] mem_read_data;
-    wire        mem_ready;
     
     // Control unit signals
     wire        pc_stall, if_stall, id_stall, ex_stall, mem_stall, wb_stall;
@@ -90,34 +87,34 @@ module riscv_dsp_core (
     wire [31:0] forward_data1, forward_data2;
     
     // Branch and jump logic
-    wire branch_taken, jump_taken;
-    wire [31:0] branch_target, jump_target;
+    wire jump_taken;
+    wire [31:0] jump_target;
     
     // Component instantiations
     instruction_decoder decoder (
         .instruction(instruction_id),
         .opcode(opcode),
-        .rd(rd_id),
+        .rd(rd),
         .funct3(funct3),
-        .rs1(rs1_id),
-        .rs2(rs2_id),
+        .rs1(rs1),
+        .rs2(rs2),
         .funct7(funct7),
         .imm12(),
         .imm20(),
-        .imm32(imm32_id),
-        .alu_op(alu_op_id),
-        .simd_op(simd_op_id),
-        .simd_width(simd_width_id),
-        .mac_mode(mac_mode_id),
-        .mac_enable(mac_enable_id),
-        .simd_enable(simd_enable_id),
-        .mem_read(mem_read_id),
-        .mem_write(mem_write_id),
-        .reg_write(reg_write_id),
-        .branch(branch_id),
-        .jump(jump_id),
-        .saturate(saturate_id),
-        .round(round_id)
+        .imm32(imm32),
+        .alu_op(alu_op),
+        .simd_op(simd_op),
+        .simd_width(simd_width),
+        .mac_mode(mac_mode),
+        .mac_enable(mac_enable),
+        .simd_enable(simd_enable),
+        .mem_read(mem_read),
+        .mem_write(mem_write),
+        .reg_write(reg_write),
+        .branch(branch),
+        .jump(jump),
+        .saturate(saturate),
+        .round(round)
     );
     
     register_file reg_file (
@@ -238,7 +235,7 @@ module riscv_dsp_core (
     assign jump_target = (opcode == 7'b1100111) ? (reg_data1_ex + imm32_ex) : (pc_ex + imm32_ex);
     
     // PC logic
-    assign pc_plus_4 = pc + 4;
+    assign pc_plus_4 = pc_current + 4;
     assign pc_next = (branch_taken) ? branch_target :
                     (jump_taken) ? jump_target :
                     pc_plus_4;
@@ -247,21 +244,23 @@ module riscv_dsp_core (
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             // Reset all pipeline registers
-            pc_if <= 32'h0;
+            pc_current <= 32'h1000;  // Start at address 0x1000 (valid instruction memory)
+            pc_if <= 32'h1000;
             pc_id <= 32'h0;
             pc_ex <= 32'h0;
             pc_mem <= 32'h0;
             pc_wb <= 32'h0;
-            instruction_if <= 32'h0;
-            instruction_id <= 32'h0;
-            instruction_ex <= 32'h0;
-            instruction_mem <= 32'h0;
-            instruction_wb <= 32'h0;
+            instruction_if <= 32'h00000013;  // NOP instruction
+            instruction_id <= 32'h00000013;  // NOP instruction
+            instruction_ex <= 32'h00000013;  // NOP instruction
+            instruction_mem <= 32'h00000013; // NOP instruction
+            instruction_wb <= 32'h00000013;  // NOP instruction
             // ... (reset all other pipeline registers)
             processor_ready <= 1'b0;
         end else begin
             // IF stage
             if (!pc_stall) begin
+                pc_current <= pc_next;
                 pc_if <= pc_next;
             end
             if (!if_stall) begin
@@ -274,23 +273,23 @@ module riscv_dsp_core (
                 instruction_id <= instruction_if;
                 reg_data1_id <= reg_data1;
                 reg_data2_id <= reg_data2;
-                imm32_id <= imm32_id;
-                rd_id <= rd_id;
-                rs1_id <= rs1_id;
-                rs2_id <= rs2_id;
-                reg_write_id <= reg_write_id;
-                mem_read_id <= mem_read_id;
-                mem_write_id <= mem_write_id;
-                branch_id <= branch_id;
-                jump_id <= jump_id;
-                alu_op_id <= alu_op_id;
-                simd_op_id <= simd_op_id;
-                simd_width_id <= simd_width_id;
-                mac_mode_id <= mac_mode_id;
-                mac_enable_id <= mac_enable_id;
-                simd_enable_id <= simd_enable_id;
-                saturate_id <= saturate_id;
-                round_id <= round_id;
+                imm32_id <= imm32;
+                rd_id <= rd;
+                rs1_id <= rs1;
+                rs2_id <= rs2;
+                reg_write_id <= reg_write;
+                mem_read_id <= mem_read;
+                mem_write_id <= mem_write;
+                branch_id <= branch;
+                jump_id <= jump;
+                alu_op_id <= alu_op;
+                simd_op_id <= simd_op;
+                simd_width_id <= simd_width;
+                mac_mode_id <= mac_mode;
+                mac_enable_id <= mac_enable;
+                simd_enable_id <= simd_enable;
+                saturate_id <= saturate;
+                round_id <= round;
             end
             
             // EX stage
@@ -355,7 +354,40 @@ module riscv_dsp_core (
                            alu_result_wb;
     
     // External interface
-    assign pc = pc_if;
+    assign pc = pc_current;
     assign external_data_out = alu_result_wb;
+    
+    // Debug/verification outputs
+    assign instruction = instruction_if;
+    assign pc_plus_4 = pc_current + 4;
+    assign rs1 = rs1_id;
+    assign rs2 = rs2_id;
+    assign rd = rd_wb;
+    assign reg_data1 = reg_data1_id;
+    assign reg_data2 = reg_data2_id;
+    assign reg_write = reg_write_wb;
+    assign alu_result = alu_result_ex;
+    // ALU flags come directly from ALU module (not pipelined)
+    // These are already connected to output ports in the ALU instantiation
+    assign alu_op = alu_op_ex;
+    // MAC signals come directly from MAC module (not pipelined)
+    // These are already connected to output ports in the MAC instantiation
+    assign mac_mode = mac_mode_ex;
+    assign mac_enable = mac_enable_ex;
+    assign saturate = saturate_ex;
+    assign round = round_ex;
+    // SIMD signals come directly from SIMD module (not pipelined)
+    // These are already connected to output ports in the SIMD instantiation
+    assign simd_op = simd_op_ex;
+    assign simd_width = simd_width_ex;
+    assign simd_enable = simd_enable_ex;
+    assign mem_read_data = mem_read_data_mem;
+    assign mem_read = mem_read_ex;
+    assign mem_write = mem_write_ex;
+    assign mem_ready = 1'b1; // Assume memory is always ready
+    assign branch = branch_ex;
+    assign jump = jump_ex;
+    // branch_target is calculated as a wire, not pipelined
+    // branch_taken is calculated as a wire, not pipelined
 
 endmodule

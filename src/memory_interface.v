@@ -44,9 +44,18 @@ module memory_interface (
     // Initialize memories
     integer i;
     initial begin
+        // Initialize instruction memory with valid RISC-V instructions
         for (i = 0; i < 4096; i = i + 1) begin
-            instruction_mem[i] = 32'h0;
+            instruction_mem[i] = 32'h00000013; // NOP instruction (ADDI x0, x0, 0)
         end
+        // Put some real instructions at PC=0x1000 (index 0x400)
+        instruction_mem[1024] = 32'h00000013; // NOP: ADDI x0, x0, 0 (PC=0x1000)
+        instruction_mem[1025] = 32'h00100093; // ADDI x1, x0, 1 (PC=0x1004)
+        instruction_mem[1026] = 32'h00200113; // ADDI x2, x0, 2 (PC=0x1008)
+        instruction_mem[1027] = 32'h00300193; // ADDI x3, x0, 3 (PC=0x100C)
+        instruction_mem[1028] = 32'h00400213; // ADDI x4, x0, 4 (PC=0x1010)
+        instruction_mem[1029] = 32'h00500293; // ADDI x5, x0, 5 (PC=0x1014)
+        
         for (i = 0; i < 2048; i = i + 1) begin
             data_mem[i] = 32'h0;
         end
@@ -75,12 +84,12 @@ module memory_interface (
     // Instruction fetch
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            instruction <= 32'h0;
+            instruction <= 32'h00000013; // NOP instruction during reset
         end else if (!if_stall) begin
             if (pc[31:2] < 4096) begin
                 instruction <= instruction_mem[pc[31:2]];
             end else begin
-                instruction <= 32'h0; // Invalid address
+                instruction <= 32'h00000013; // NOP for invalid address
             end
         end
     end

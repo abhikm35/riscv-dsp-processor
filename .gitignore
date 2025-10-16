@@ -1,0 +1,63 @@
+# Simulation artifacts
+sim/behav/WORKSPACE/
+sim/behav/xcelium.d/
+sim/behav/cov_work/
+*.log
+*.history
+*.ucm
+*.ucd
+*.vcd
+*.wlf
+*.fsdb
+*.shm
+transcript
+xrun.log
+xrun.key
+xrun.history
+
+# Cadence Xcelium specific
+xcelium.d/
+cov_work/
+WORKSPACE/
+sym_links/
+simulation.log
+simulation.history
+
+# ModelSim/QuestaSim specific
+work/
+modelsim.ini
+*.wlf
+*.vstf
+
+# Vivado specific
+*.jou
+*.log
+*.str
+.cache/
+.hw/
+.sim/
+.ip_user_files/
+*.xpr
+*.runs/
+*.srcs/
+*.sdk/
+*.hwdef
+
+# General build artifacts
+*.o
+*.so
+*.a
+*.exe
+*.dll
+*.dylib
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db

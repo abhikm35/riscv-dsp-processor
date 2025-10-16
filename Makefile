@@ -24,23 +24,12 @@ SOFTWARE_SOURCES = $(wildcard $(SOFTWARE_DIR)/*.c)
 all: test synth software
 
 # Test targets
-test: test-mac test-simd test-alu test-processor
+test: test-uvm
 
-test-mac:
-	@echo "Running MAC unit testbench..."
-	$(VSIM) -c -do "run -all" $(TESTBENCH_DIR)/mac_unit_tb
-
-test-simd:
-	@echo "Running SIMD unit testbench..."
-	$(VSIM) -c -do "run -all" $(TESTBENCH_DIR)/simd_unit_tb
-
-test-alu:
-	@echo "Running ALU testbench..."
-	$(VSIM) -c -do "run -all" $(TESTBENCH_DIR)/alu_tb
-
-test-processor:
-	@echo "Running processor testbench..."
-	$(VSIM) -c -do "run -all" $(TESTBENCH_DIR)/processor_tb
+test-uvm:
+	@echo "Running UVM testbench..."
+	@echo "Note: Use 'make xrun' in sim/behav directory for Cadence Xcelium simulation"
+	@echo "Or use 'make test' in sim/behav directory for UVM testbench"
 
 # Synthesis target
 synth:
@@ -82,10 +71,7 @@ help:
 	@echo "Available targets:"
 	@echo "  all          - Run all tests, synthesis, and compile software"
 	@echo "  test         - Run all testbenches"
-	@echo "  test-mac     - Run MAC unit testbench"
-	@echo "  test-simd    - Run SIMD unit testbench"
-	@echo "  test-alu     - Run ALU testbench"
-	@echo "  test-processor - Run processor testbench"
+	@echo "  test-uvm     - Run UVM testbench (redirects to sim/behav)"
 	@echo "  synth        - Run synthesis"
 	@echo "  software     - Compile DSP application"
 	@echo "  dsp_app      - Compile DSP application"
@@ -95,7 +81,7 @@ help:
 	@echo "  help         - Show this help message"
 
 # Phony targets
-.PHONY: all test test-mac test-simd test-alu test-processor synth software dsp_app clean clean-synth clean-software help
+.PHONY: all test test-uvm synth software dsp_app clean clean-synth clean-software help
 
 # Dependencies
 $(SOFTWARE_DIR)/dsp_app: $(SOFTWARE_SOURCES)

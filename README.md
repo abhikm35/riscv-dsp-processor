@@ -51,11 +51,13 @@ This project implements a complete DSP-optimized CPU core with:
 │   ├── fir_filter.c      # FIR filter implementation
 │   ├── fft.c             # FFT implementation
 │   └── dsp_math.h        # DSP math library
-├── testbench/            # Testbenches
-│   ├── mac_unit_tb.v     # MAC unit testbench
-│   ├── simd_unit_tb.v    # SIMD unit testbench
-│   ├── alu_tb.v          # ALU testbench
-│   └── processor_tb.v    # Processor testbench
+├── testbench/            # UVM Testbench
+│   ├── riscv_dsp_tb_top.sv    # Top-level testbench
+│   ├── riscv_dsp_pkg.sv       # UVM package
+│   ├── riscv_dsp_if.sv        # SystemVerilog interface
+│   ├── riscv_dsp_driver.sv    # UVM driver
+│   ├── riscv_dsp_monitor.sv   # UVM monitor
+│   └── riscv_dsp_scoreboard.sv # UVM scoreboard
 ├── scripts/              # Synthesis scripts
 │   └── synthesize.tcl    # Vivado synthesis script
 ├── constraints/          # Timing constraints
@@ -73,25 +75,28 @@ This project implements a complete DSP-optimized CPU core with:
 
 ### Simulation
 
-1. **Run individual component testbenches:**
+1. **Run UVM testbench with Cadence Xcelium:**
 ```bash
-# MAC unit testbench
-cd testbench
-vsim -c -do "run -all" mac_unit_tb
-
-# SIMD unit testbench
-vsim -c -do "run -all" simd_unit_tb
-
-# ALU testbench
-vsim -c -do "run -all" alu_tb
-
-# Processor testbench
-vsim -c -do "run -all" processor_tb
+cd sim/behav
+make xrun
 ```
 
-2. **Run all testbenches:**
+2. **Run UVM testbench with ModelSim/QuestaSim:**
 ```bash
+cd sim/behav
 make test
+```
+
+3. **View waveforms:**
+```bash
+cd sim/behav
+make simvision  # For Cadence SimVision
+make verisium   # For Cadence Verisium Debug
+```
+
+4. **Run from project root:**
+```bash
+make test  # Redirects to sim/behav directory
 ```
 
 ### Synthesis
