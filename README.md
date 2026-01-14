@@ -214,20 +214,6 @@ gcc -o dsp_app main.c fir_filter.c fft.c -lm
 4. Add tests
 5. Submit pull request
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
 - RISC-V Foundation for the ISA specification
 - Xilinx for FPGA tools and documentation
 - Open source DSP algorithm implementations
-
-## Contact
-
-For questions or contributions, please contact the project maintainers.
-
----
-
-**Note**: This is a research and educational project. For production use, additional verification and optimization may be required.
